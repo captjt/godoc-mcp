@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "godoc": {
+      "command": "node",
+      "args": ["/path/to/godoc-mcp/dist/index.js"],
+      "env": {
+        "GODOC_MCP_CACHE_TTL": "3600",
+        "GODOC_MCP_CACHE_SIZE": "1000",
+        "GODOC_MCP_REQUEST_TIMEOUT": "30",
+        "LOG_LEVEL": "info"
+      }
+    }
+  }
+}
