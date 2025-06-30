@@ -12,7 +12,7 @@ export class DocumentationCache {
       stdTTL: this.defaultTTL,
       checkperiod: options?.checkperiod || 600, // Check every 10 minutes
       maxKeys: options?.maxKeys || 1000,
-      useClones: false // For performance
+      useClones: false, // For performance
     });
 
     this.cache.on('expired', (key) => {
@@ -44,7 +44,7 @@ export class DocumentationCache {
       const entry: CacheEntry<T> = {
         data: value,
         timestamp: Date.now(),
-        ttl: ttl || this.defaultTTL
+        ttl: ttl || this.defaultTTL,
       };
       const success = this.cache.set(key, entry, ttl || this.defaultTTL);
       if (success) {
@@ -80,7 +80,7 @@ export class DocumentationCache {
       hits: this.cache.getStats().hits,
       misses: this.cache.getStats().misses,
       ksize: this.cache.getStats().ksize,
-      vsize: this.cache.getStats().vsize
+      vsize: this.cache.getStats().vsize,
     };
   }
 }

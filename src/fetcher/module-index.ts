@@ -21,14 +21,16 @@ export class ModuleIndexFetcher {
       const response = await fetch(this.indexUrl, {
         signal: controller.signal,
         headers: {
-          'Accept': 'application/json'
-        }
+          Accept: 'application/json',
+        },
       });
 
       clearTimeout(timeoutId);
 
       if (!response || !response.ok) {
-        throw new Error(`HTTP ${response?.status || 'unknown'}: ${response?.statusText || 'Request failed'}`);
+        throw new Error(
+          `HTTP ${response?.status || 'unknown'}: ${response?.statusText || 'Request failed'}`
+        );
       }
 
       const text = await response.text();
@@ -41,7 +43,7 @@ export class ModuleIndexFetcher {
           modules.push({
             path: parsed.Path || parsed.path,
             version: parsed.Version || parsed.version,
-            timestamp: parsed.Timestamp || parsed.timestamp
+            timestamp: parsed.Timestamp || parsed.timestamp,
           });
         } catch (e) {
           logger.warn(`Failed to parse module index line: ${line}`);
@@ -52,20 +54,20 @@ export class ModuleIndexFetcher {
       return modules;
     } catch (error: any) {
       clearTimeout(timeoutId);
-      
+
       if (error.name === 'AbortError') {
         throw new Error('Module index fetch timeout');
       }
-      
+
       throw new Error(`Failed to fetch module index: ${error.message}`);
     }
   }
 
   async getIndex(): Promise<ModuleVersion[]> {
     const now = Date.now();
-    
+
     // Return cached index if still fresh
-    if (this.cachedIndex && (now - this.lastFetchTime) < this.indexCacheTTL) {
+    if (this.cachedIndex && now - this.lastFetchTime < this.indexCacheTTL) {
       logger.debug('Using cached module index');
       return this.cachedIndex;
     }
@@ -78,13 +80,13 @@ export class ModuleIndexFetcher {
 
   async getPackageVersions(packagePath: string): Promise<PackageVersions | null> {
     const index = await this.getIndex();
-    
+
     // Filter modules for this package
     const versions = index
-      .filter(m => m.path === packagePath)
-      .map(m => ({
+      .filter((m) => m.path === packagePath)
+      .map((m) => ({
         version: m.version,
-        timestamp: m.timestamp
+        timestamp: m.timestamp,
       }))
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
@@ -93,13 +95,13 @@ export class ModuleIndexFetcher {
     }
 
     // Determine latest stable version
-    const stableVersions = versions.filter(v => !v.version.includes('-'));
+    const stableVersions = versions.filter((v) => !v.version.includes('-'));
     const latest = stableVersions.length > 0 ? stableVersions[0].version : versions[0].version;
 
     return {
       path: packagePath,
       versions,
-      latest
+      latest,
     };
   }
 
@@ -111,10 +113,10 @@ export class ModuleIndexFetcher {
   async searchPackages(query: string): Promise<Array<{ path: string; latest: string }>> {
     const index = await this.getIndex();
     const queryLower = query.toLowerCase();
-    
+
     // Group by package path
     const packageMap = new Map<string, ModuleVersion[]>();
-    
+
     for (const module of index) {
       if (module.path.toLowerCase().includes(queryLower)) {
         const existing = packageMap.get(module.path) || [];
@@ -125,19 +127,19 @@ export class ModuleIndexFetcher {
 
     // Get latest version for each matching package
     const results: Array<{ path: string; latest: string }> = [];
-    
+
     for (const [path, versions] of packageMap.entries()) {
-      const sorted = versions.sort((a, b) => 
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      const sorted = versions.sort(
+        (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
       );
-      
+
       // Prefer stable versions
-      const stableVersion = sorted.find(v => !v.version.includes('-'));
+      const stableVersion = sorted.find((v) => !v.version.includes('-'));
       const latest = stableVersion || sorted[0];
-      
+
       results.push({
         path,
-        latest: latest.version
+        latest: latest.version,
       });
     }
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DocumentationCache } from '../../src/cache/index.js';
 
 describe('DocumentationCache Unit Tests', () => {
@@ -8,7 +8,7 @@ describe('DocumentationCache Unit Tests', () => {
     cache = new DocumentationCache({
       stdTTL: 60,
       checkperiod: 10,
-      maxKeys: 5
+      maxKeys: 5,
     });
   });
 
@@ -16,10 +16,10 @@ describe('DocumentationCache Unit Tests', () => {
     it('should store and retrieve values', () => {
       const key = 'test-key';
       const value = { data: 'test-value' };
-      
+
       const result = cache.set(key, value);
       expect(result).toBe(true);
-      
+
       const retrieved = cache.get(key);
       expect(retrieved).toEqual(value);
     });
@@ -31,7 +31,7 @@ describe('DocumentationCache Unit Tests', () => {
 
     it('should check if key exists', () => {
       cache.set('exists', 'value');
-      
+
       expect(cache.has('exists')).toBe(true);
       expect(cache.has('not-exists')).toBe(false);
     });
@@ -39,11 +39,11 @@ describe('DocumentationCache Unit Tests', () => {
     it('should delete keys', () => {
       cache.set('to-delete', 'value');
       expect(cache.has('to-delete')).toBe(true);
-      
+
       const deleted = cache.delete('to-delete');
       expect(deleted).toBe(true);
       expect(cache.has('to-delete')).toBe(false);
-      
+
       // Deleting non-existent key
       const deletedAgain = cache.delete('to-delete');
       expect(deletedAgain).toBe(false);
@@ -52,11 +52,11 @@ describe('DocumentationCache Unit Tests', () => {
     it('should clear all entries', () => {
       cache.set('key1', 'value1');
       cache.set('key2', 'value2');
-      
+
       expect(cache.getStats().keys).toBe(2);
-      
+
       cache.clear();
-      
+
       expect(cache.getStats().keys).toBe(0);
       expect(cache.has('key1')).toBe(false);
       expect(cache.has('key2')).toBe(false);
@@ -68,7 +68,7 @@ describe('DocumentationCache Unit Tests', () => {
       const key = 'custom-ttl';
       const value = 'test';
       const customTTL = 120; // 2 minutes
-      
+
       cache.set(key, value, customTTL);
       expect(cache.get(key)).toBe(value);
     });
@@ -76,7 +76,7 @@ describe('DocumentationCache Unit Tests', () => {
     it('should use default TTL when not specified', () => {
       const key = 'default-ttl';
       const value = 'test';
-      
+
       cache.set(key, value);
       expect(cache.get(key)).toBe(value);
     });
@@ -88,17 +88,17 @@ describe('DocumentationCache Unit Tests', () => {
       expect(initialStats.keys).toBe(0);
       expect(initialStats.hits).toBe(0);
       expect(initialStats.misses).toBe(0);
-      
+
       // Add some entries
       cache.set('key1', 'value1');
       cache.set('key2', 'value2');
-      
+
       // Generate hits and misses
       cache.get('key1'); // hit
       cache.get('key1'); // hit
       cache.get('key3'); // miss
       cache.get('key4'); // miss
-      
+
       const stats = cache.getStats();
       expect(stats.keys).toBe(2);
       expect(stats.hits).toBe(2);
@@ -114,10 +114,10 @@ describe('DocumentationCache Unit Tests', () => {
       mockCache.cache.get = vi.fn().mockImplementation(() => {
         throw new Error('Internal error');
       });
-      
+
       const result = cache.get('any-key');
       expect(result).toBeUndefined();
-      
+
       // Restore
       mockCache.cache.get = originalGet;
     });
@@ -128,10 +128,10 @@ describe('DocumentationCache Unit Tests', () => {
       mockCache.cache.set = vi.fn().mockImplementation(() => {
         throw new Error('Internal error');
       });
-      
+
       const result = cache.set('any-key', 'any-value');
       expect(result).toBe(false);
-      
+
       // Restore
       mockCache.cache.set = originalSet;
     });
@@ -142,15 +142,15 @@ describe('DocumentationCache Unit Tests', () => {
       const key = 'metadata-test';
       const value = { test: 'data' };
       const ttl = 300;
-      
+
       const beforeTimestamp = Date.now();
       cache.set(key, value, ttl);
       const afterTimestamp = Date.now();
-      
+
       // Access internal cache to verify structure
       const mockCache = cache as any;
       const entry = mockCache.cache.get(key);
-      
+
       expect(entry).toBeDefined();
       expect(entry.data).toEqual(value);
       expect(entry.timestamp).toBeGreaterThanOrEqual(beforeTimestamp);

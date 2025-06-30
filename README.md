@@ -39,11 +39,13 @@ npm run build
 ### Quick Start
 
 1. Build the project:
+
    ```bash
    npm run build
    ```
 
 2. Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+
    ```json
    {
      "mcpServers": {
@@ -128,67 +130,74 @@ Or if you've installed globally:
 ## Available Tools
 
 ### `get_package_doc`
+
 Retrieves comprehensive documentation for a Go package, with optional version support.
 
 ```typescript
 // Example usage
-get_package_doc({ package: "fmt" })
-get_package_doc({ package: "github.com/gin-gonic/gin" })
-get_package_doc({ package: "github.com/gin-gonic/gin", version: "v1.9.0" })
-get_package_doc({ package: "github.com/gin-gonic/gin", version: "latest" })
+get_package_doc({ package: 'fmt' });
+get_package_doc({ package: 'github.com/gin-gonic/gin' });
+get_package_doc({ package: 'github.com/gin-gonic/gin', version: 'v1.9.0' });
+get_package_doc({ package: 'github.com/gin-gonic/gin', version: 'latest' });
 ```
 
 ### `get_function_doc`
+
 Gets detailed documentation for a specific function, with optional version support.
 
 ```typescript
 // Example usage
-get_function_doc({ package: "fmt", function: "Printf" })
-get_function_doc({ package: "strings", function: "Split" })
-get_function_doc({ package: "strings", function: "Split", version: "latest" })
+get_function_doc({ package: 'fmt', function: 'Printf' });
+get_function_doc({ package: 'strings', function: 'Split' });
+get_function_doc({ package: 'strings', function: 'Split', version: 'latest' });
 ```
 
 ### `get_type_doc`
+
 Retrieves documentation for types and their methods, with optional version support.
 
 ```typescript
 // Example usage
-get_type_doc({ package: "io", type: "Reader" })
-get_type_doc({ package: "net/http", type: "Client" })
-get_type_doc({ package: "net/http", type: "Client", version: "v1.21.0" })
+get_type_doc({ package: 'io', type: 'Reader' });
+get_type_doc({ package: 'net/http', type: 'Client' });
+get_type_doc({ package: 'net/http', type: 'Client', version: 'v1.21.0' });
 ```
 
 ### `search_packages`
+
 Searches for Go packages by name or description.
 
 ```typescript
 // Example usage
-search_packages({ query: "web framework" })
-search_packages({ query: "json parsing" })
+search_packages({ query: 'web framework' });
+search_packages({ query: 'json parsing' });
 ```
 
 ### `get_package_examples`
+
 Retrieves example code for a package, with optional version support.
 
 ```typescript
 // Example usage
-get_package_examples({ package: "context" })
-get_package_examples({ package: "sync" })
-get_package_examples({ package: "sync", version: "latest" })
+get_package_examples({ package: 'context' });
+get_package_examples({ package: 'sync' });
+get_package_examples({ package: 'sync', version: 'latest' });
 ```
 
 ### `get_package_versions`
+
 Lists all available versions of a Go package from the official module index.
 
 ```typescript
 // Example usage
-get_package_versions({ package: "github.com/gin-gonic/gin" })
-get_package_versions({ package: "golang.org/x/text" })
+get_package_versions({ package: 'github.com/gin-gonic/gin' });
+get_package_versions({ package: 'golang.org/x/text' });
 ```
 
 ## Example Interactions
 
 ### Getting Started with a Package
+
 ```
 User: "How do I use the new slog package for structured logging?"
 Assistant: Let me fetch the latest documentation for the slog package...
@@ -196,6 +205,7 @@ Assistant: Let me fetch the latest documentation for the slog package...
 ```
 
 ### Understanding Function Signatures
+
 ```
 User: "What's the signature for http.HandleFunc?"
 Assistant: I'll get the current documentation for that function...
@@ -203,6 +213,7 @@ Assistant: I'll get the current documentation for that function...
 ```
 
 ### Exploring Package Capabilities
+
 ```
 User: "What methods does io.Reader have?"
 Assistant: Let me look up the io.Reader interface and its methods...
@@ -210,6 +221,7 @@ Assistant: Let me look up the io.Reader interface and its methods...
 ```
 
 ### Working with Versions
+
 ```
 User: "What versions of gin are available?"
 Assistant: I'll check the available versions of the Gin web framework...
@@ -217,6 +229,7 @@ Assistant: I'll check the available versions of the Gin web framework...
 ```
 
 ### Version-Specific Documentation
+
 ```
 User: "Show me the Router type from gin v1.8.0"
 Assistant: I'll get the documentation for the Router type from Gin v1.8.0...
@@ -226,6 +239,7 @@ Assistant: I'll get the documentation for the Router type from Gin v1.8.0...
 ## Development
 
 ### Project Structure
+
 ```
 godoc-mcp/
 ├── src/
@@ -296,15 +310,32 @@ npm run test:coverage
 # Build the project
 npm run build
 
-# Type check
-npm run typecheck
-
 # Run in development mode
 npm run dev
 
 # Clean build artifacts
 npm run clean
+
+# Code quality checks
+npm run typecheck    # Type checking
+npm run lint         # ESLint
+npm run lint:fix     # Auto-fix linting issues
+npm run format       # Format with Prettier
+npm run format:check # Check formatting
+npm run check        # Run all checks
 ```
+
+### Code Quality
+
+The project uses several tools to maintain code quality:
+
+- **TypeScript**: Strict type checking enabled
+- **ESLint**: Enforces code quality and consistency
+- **Prettier**: Automatic code formatting
+- **Husky**: Pre-commit hooks to ensure quality
+- **lint-staged**: Only lint/format changed files
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ### Contributing
 

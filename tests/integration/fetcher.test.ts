@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GoDocFetcher } from '../../src/fetcher/index.js';
-import { mockFetchResponse, samplePackageHTML, delay } from '../utils/testHelpers.js';
+import { mockFetchResponse, samplePackageHTML } from '../utils/testHelpers.js';
 import { withRateLimit } from '../utils/rateLimitHelper.js';
 
 describe('GoDocFetcher Integration Tests', () => {
@@ -14,7 +14,7 @@ describe('GoDocFetcher Integration Tests', () => {
   describe('Real pkg.go.dev Integration', () => {
     it('should fetch real package documentation for fmt', async () => {
       const doc = await withRateLimit(() => fetcher.getPackageDoc('fmt'));
-      
+
       expect(doc).toBeDefined();
       expect(doc.name).toBe('fmt');
       expect(doc.importPath).toBe('fmt');
@@ -28,7 +28,7 @@ describe('GoDocFetcher Integration Tests', () => {
     it.skip('should fetch real function documentation', async () => {
       // Skip this test as HTML structure for functions is unreliable
       const doc = await withRateLimit(() => fetcher.getFunctionDoc('fmt', 'Printf'));
-      
+
       expect(doc).toBeDefined();
       expect(doc.name).toBe('Printf');
       expect(doc.signature).toContain('func Printf');
@@ -40,7 +40,7 @@ describe('GoDocFetcher Integration Tests', () => {
     it.skip('should fetch real type documentation', async () => {
       // Skip this test as HTML structure for types is unreliable
       const doc = await withRateLimit(() => fetcher.getTypeDoc('fmt', 'Stringer'));
-      
+
       expect(doc).toBeDefined();
       expect(doc.name).toBe('Stringer');
       expect(doc.definition).toContain('type Stringer interface');
@@ -65,12 +65,12 @@ describe('GoDocFetcher Integration Tests', () => {
     it.skip('should search for packages', async () => {
       // Skip - search is unreliable on pkg.go.dev
       const results = await withRateLimit(() => fetcher.searchPackages('json', 5));
-      
+
       expect(results).toBeInstanceOf(Array);
       // Search might return empty results due to HTML changes
       if (results.length > 0) {
         expect(results.length).toBeLessThanOrEqual(5);
-        
+
         const firstResult = results[0];
         expect(firstResult).toHaveProperty('path');
         expect(firstResult).toHaveProperty('name');
@@ -82,7 +82,7 @@ describe('GoDocFetcher Integration Tests', () => {
 
     it('should fetch package examples', async () => {
       const examples = await withRateLimit(() => fetcher.getPackageExamples('fmt'));
-      
+
       expect(examples).toBeInstanceOf(Array);
       if (examples.length > 0) {
         const example = examples[0];
@@ -96,10 +96,10 @@ describe('GoDocFetcher Integration Tests', () => {
   describe('Version-specific fetching', () => {
     it('should fetch versioned package documentation', async () => {
       // Using a known versioned package
-      const doc = await withRateLimit(() => 
+      const doc = await withRateLimit(() =>
         fetcher.getPackageDoc('github.com/stretchr/testify', 'v1.8.0')
       );
-      
+
       expect(doc).toBeDefined();
       expect(doc.name).toBe('testify');
       expect(doc.importPath).toBe('github.com/stretchr/testify');
@@ -114,9 +114,8 @@ describe('GoDocFetcher Integration Tests', () => {
     it('should handle network timeouts', async () => {
       // Create fetcher with very short timeout
       const timeoutFetcher = new GoDocFetcher({ timeout: 1 });
-      
-      await expect(timeoutFetcher.getPackageDoc('golang.org/x/tools'))
-        .rejects.toThrow('timeout');
+
+      await expect(timeoutFetcher.getPackageDoc('golang.org/x/tools')).rejects.toThrow('timeout');
     });
   });
 
@@ -127,12 +126,10 @@ describe('GoDocFetcher Integration Tests', () => {
     });
 
     it('should parse HTML correctly', async () => {
-      vi.mocked(global.fetch).mockResolvedValueOnce(
-        mockFetchResponse(samplePackageHTML)
-      );
+      vi.mocked(global.fetch).mockResolvedValueOnce(mockFetchResponse(samplePackageHTML));
 
       const doc = await fetcher.getPackageDoc('fmt');
-      
+
       expect(doc.name).toBe('fmt');
       expect(doc.synopsis).toContain('formatted I/O');
     });
@@ -143,7 +140,7 @@ describe('GoDocFetcher Integration Tests', () => {
       );
 
       const doc = await fetcher.getPackageDoc('test');
-      
+
       expect(doc.name).toBe('test');
       expect(doc.synopsis).toBe('No description available');
     });
