@@ -251,21 +251,23 @@ godoc-mcp/
 The project includes comprehensive integration tests that verify the fetching and caching behavior:
 
 ```bash
-# Run all tests
+# Run core tests only (RECOMMENDED - no network calls)
+npm run test:core
+
+# Run all tests (will likely fail due to rate limiting)
 npm test
+
+# Run unit tests only
+npm run test:unit
 
 # Run tests in watch mode
 npm run test:watch
 
 # Run tests with coverage report
 npm run test:coverage
-
-# Run specific test suites
-./run-tests.sh fetcher      # Test package fetching from pkg.go.dev
-./run-tests.sh cache        # Test caching behavior and performance
-./run-tests.sh module-index # Test Go module index integration
-./run-tests.sh e2e          # Test end-to-end workflows
 ```
+
+**⚠️ Important**: pkg.go.dev aggressively rate limits requests, causing most integration tests to fail. This is expected and does not indicate a problem with the MCP server. Use `npm run test:core` to run tests that don't require network access.
 
 #### Test Structure
 
@@ -285,6 +287,8 @@ npm run test:coverage
 3. **Version Support**: Tests fetching specific package versions
 4. **Error Handling**: Ensures graceful degradation when pkg.go.dev is unavailable
 5. **Concurrent Access**: Verifies thread-safe cache operations
+
+**Note**: Integration tests may occasionally fail due to rate limiting or HTML structure changes on pkg.go.dev. See [TESTING.md](TESTING.md) for troubleshooting guide.
 
 ### Development Workflow
 

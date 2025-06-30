@@ -27,8 +27,8 @@ export class ModuleIndexFetcher {
 
       clearTimeout(timeoutId);
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      if (!response || !response.ok) {
+        throw new Error(`HTTP ${response?.status || 'unknown'}: ${response?.statusText || 'Request failed'}`);
       }
 
       const text = await response.text();
