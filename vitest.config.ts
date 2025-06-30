@@ -16,6 +16,13 @@ export default defineConfig({
       ]
     },
     testTimeout: 30000, // 30 seconds for integration tests
-    hookTimeout: 30000
+    hookTimeout: 30000,
+    retry: 2, // Retry failed tests up to 2 times
+    pool: 'forks', // Use forks to isolate tests
+    poolOptions: {
+      forks: {
+        singleFork: true // Run tests sequentially to avoid rate limiting
+      }
+    }
   }
 });

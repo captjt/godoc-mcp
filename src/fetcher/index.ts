@@ -139,21 +139,22 @@ export class GoDocFetcher {
       let examples: CodeExample[] = [];
 
       // Look for function in the documentation
-      $('.Documentation-function').each((_, el) => {
+      $('[data-kind="function"]').each((_, el) => {
         const $el = $(el);
-        const funcId = $el.attr('id');
+        const $header = $el.find('.Documentation-functionHeader');
+        const funcName = $header.find('h4').attr('id');
         
-        if (funcId === functionName) {
+        if (funcName === functionName) {
           // Get signature
           signature = $el.find('.Documentation-declaration pre').text().trim();
           
           // Get documentation
-          documentation = $el.find('.Documentation-content').text().trim();
+          documentation = $el.find('.Documentation-content').first().text().trim();
           
           // Get examples if any
-          $el.find('.Documentation-example').each((_, exEl) => {
+          $el.find('.Documentation-exampleDetails').each((_, exEl) => {
             const $ex = $(exEl);
-            const exampleName = $ex.find('.Documentation-exampleHeader').text().trim();
+            const exampleName = $ex.find('.Documentation-exampleDetailsHeader').text().trim();
             const code = $ex.find('.Documentation-exampleCode pre').text().trim();
             const output = $ex.find('.Documentation-exampleOutput pre').text().trim();
             
@@ -206,9 +207,10 @@ export class GoDocFetcher {
       let methods: MethodDoc[] = [];
 
       // Look for type in the documentation
-      $('.Documentation-type').each((_, el) => {
+      $('[data-kind="type"]').each((_, el) => {
         const $el = $(el);
-        const typeId = $el.attr('id');
+        const $header = $el.find('.Documentation-typeHeader');
+        const typeId = $header.find('h4').attr('id');
         
         if (typeId === typeName) {
           // Get definition
@@ -220,22 +222,25 @@ export class GoDocFetcher {
       });
 
       // Look for methods
-      $('.Documentation-typeMethod').each((_, el) => {
+      $('[data-kind="method"]').each((_, el) => {
         const $el = $(el);
-        const methodId = $el.attr('id');
+        const $header = $el.find('.Documentation-functionHeader');
+        const methodId = $header.find('h4').attr('id') || '';
         
         // Check if this method belongs to our type
         if (methodId && methodId.startsWith(`${typeName}.`)) {
           const methodName = methodId.replace(`${typeName}.`, '');
           const methodSignature = $el.find('.Documentation-declaration pre').text().trim();
-          const methodDoc = $el.find('.Documentation-content').text().trim();
+          const methodDoc = $el.find('.Documentation-content').first().text().trim();
           
-          methods.push({
-            name: methodName,
-            signature: methodSignature,
-            documentation: methodDoc,
-            receiver: typeName
-          });
+          if (methodSignature) {
+            methods.push({
+              name: methodName,
+              signature: methodSignature,
+              documentation: methodDoc,
+              receiver: typeName
+            });
+          }
         }
       });
 
@@ -272,20 +277,48 @@ export class GoDocFetcher {
     try {
       const results: SearchResult[] = [];
 
-      $('.SearchSnippet').each((_, el) => {
-        const $el = $(el);
-        const path = $el.find('.SearchSnippet-header a').attr('href')?.replace('/', '') || '';
-        const name = $el.find('.SearchSnippet-header a').text().trim();
-        const synopsis = $el.find('.SearchSnippet-synopsis').text().trim();
+      // Try multiple selectors for search results
+      const searchSelectors = [
+        '.SearchSnippet',
+        '[data-test-id="snippet-title"]',
+        '.SearchResult',
+        'article'
+      ];
 
-        if (path && name) {
-          results.push({
-            path,
-            name,
-            synopsis
-          });
-        }
-      });
+      let found = false;
+      for (const selector of searchSelectors) {
+        $(selector).each((_, el) => {
+          const $el = $(el);
+          
+          // Try to find the package path
+          const link = $el.find('a').first();
+          const href = link.attr('href') || '';
+          const path = href.replace(/^\//, '').split('@')[0]; // Remove leading slash and version
+          
+          // Try to find the name
+          const name = link.text().trim() || 
+                      $el.find('.SearchSnippet-header').text().trim() ||
+                      $el.find('h2').text().trim() ||
+                      path.split('/').pop() || '';
+          
+          // Try to find synopsis
+          const synopsis = $el.find('.SearchSnippet-synopsis').text().trim() ||
+                          $el.find('p').first().text().trim() ||
+                          $el.find('[data-test-id="snippet-synopsis"]').text().trim() ||
+                          'No description available';
+
+          if (path && name && !results.find(r => r.path === path)) {
+            results.push({
+              path,
+              name,
+              synopsis
+            });
+            found = true;
+          }
+        });
+        
+        if (found) break;
+      }
 
       return results;
     } catch (error) {
