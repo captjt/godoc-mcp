@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { DocumentationCache } from '../../src/cache/index.js';
 import { GoDocFetcher } from '../../src/fetcher/index.js';
 import { delay } from '../utils/testHelpers.js';
@@ -11,7 +11,7 @@ describe('Cache Integration Tests', () => {
     cache = new DocumentationCache({
       stdTTL: 2, // 2 seconds for testing
       checkperiod: 1,
-      maxKeys: 10
+      maxKeys: 10,
     });
     fetcher = new GoDocFetcher({ timeout: 10000 });
   });
@@ -37,13 +37,13 @@ describe('Cache Integration Tests', () => {
       const value = { data: 'test' };
 
       cache.set(key, value, 1); // 1 second TTL
-      
+
       // Should exist immediately
       expect(cache.get(key)).toEqual(value);
-      
+
       // Wait for expiration
       await delay(1500);
-      
+
       // Should be expired
       expect(cache.get(key)).toBeUndefined();
     });
@@ -57,7 +57,7 @@ describe('Cache Integration Tests', () => {
       // Add some entries
       cache.set('key1', 'value1');
       cache.set('key2', 'value2');
-      
+
       // Some hits and misses
       cache.get('key1'); // hit
       cache.get('key1'); // hit
@@ -95,7 +95,7 @@ describe('Cache Integration Tests', () => {
       // Cache should be significantly faster
       const avgFetchTime = fetchTimes.reduce((a, b) => a + b, 0) / fetchTimes.length;
       const avgCacheTime = cacheTimes.reduce((a, b) => a + b, 0) / cacheTimes.length;
-      
+
       expect(avgCacheTime).toBeLessThan(avgFetchTime / 10); // At least 10x faster
     });
 
@@ -126,7 +126,7 @@ describe('Cache Integration Tests', () => {
       // Create cache with small limit
       const smallCache = new DocumentationCache({
         stdTTL: 60,
-        maxKeys: 3
+        maxKeys: 3,
       });
 
       // Add more than max keys
@@ -146,12 +146,12 @@ describe('Cache Integration Tests', () => {
       // Add some entries
       cache.set('key1', 'value1');
       cache.set('key2', 'value2');
-      
+
       expect(cache.getStats().keys).toBe(2);
-      
+
       // Clear cache
       cache.clear();
-      
+
       expect(cache.getStats().keys).toBe(0);
       expect(cache.get('key1')).toBeUndefined();
       expect(cache.get('key2')).toBeUndefined();
@@ -160,12 +160,12 @@ describe('Cache Integration Tests', () => {
     it('should allow selective cache deletion', () => {
       cache.set('keep-this', 'value1');
       cache.set('delete-this', 'value2');
-      
+
       expect(cache.has('keep-this')).toBe(true);
       expect(cache.has('delete-this')).toBe(true);
-      
+
       cache.delete('delete-this');
-      
+
       expect(cache.has('keep-this')).toBe(true);
       expect(cache.has('delete-this')).toBe(false);
     });
@@ -178,34 +178,36 @@ describe('Cache Integration Tests', () => {
       cache.set(key, value);
 
       // Simulate concurrent reads
-      const promises = Array(10).fill(null).map(() => 
-        Promise.resolve(cache.get(key))
-      );
+      const promises = Array(10)
+        .fill(null)
+        .map(() => Promise.resolve(cache.get(key)));
 
       const results = await Promise.all(promises);
-      
+
       // All should return the same value
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result).toEqual(value);
       });
     });
 
     it('should handle mixed read/write operations', async () => {
-      const operations = Array(20).fill(null).map((_, i) => {
-        if (i % 2 === 0) {
-          // Write operation
-          return Promise.resolve(cache.set(`key${i}`, `value${i}`));
-        } else {
-          // Read operation
-          return Promise.resolve(cache.get(`key${i-1}`));
-        }
-      });
+      const operations = Array(20)
+        .fill(null)
+        .map((_, i) => {
+          if (i % 2 === 0) {
+            // Write operation
+            return Promise.resolve(cache.set(`key${i}`, `value${i}`));
+          } else {
+            // Read operation
+            return Promise.resolve(cache.get(`key${i - 1}`));
+          }
+        });
 
       const results = await Promise.all(operations);
-      
+
       // Verify some reads found their values
       const readResults = results.filter((_, i) => i % 2 === 1);
-      const foundValues = readResults.filter(r => r !== undefined);
+      const foundValues = readResults.filter((r) => r !== undefined);
       expect(foundValues.length).toBeGreaterThan(0);
     });
   });

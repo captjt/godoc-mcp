@@ -1,13 +1,13 @@
 import * as cheerio from 'cheerio';
-import { 
-  PackageDoc, 
-  FunctionDoc, 
-  TypeDoc, 
-  MethodDoc, 
-  SearchResult, 
+import {
   CodeExample,
   FetcherOptions,
-  GoDocError 
+  FunctionDoc,
+  GoDocError,
+  MethodDoc,
+  PackageDoc,
+  SearchResult,
+  TypeDoc,
 } from '../types/index.js';
 import { logger } from '../utils/logger.js';
 
@@ -30,9 +30,9 @@ export class GoDocFetcher {
       const response = await fetch(url, {
         headers: {
           'User-Agent': this.userAgent,
-          'Accept': 'text/html,application/xhtml+xml'
+          Accept: 'text/html,application/xhtml+xml',
         },
-        signal: controller.signal
+        signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
@@ -49,7 +49,7 @@ export class GoDocFetcher {
       return await response.text();
     } catch (error: any) {
       clearTimeout(timeoutId);
-      
+
       if (error.name === 'AbortError') {
         const timeoutError = new Error(`Request timeout: ${url}`) as GoDocError;
         timeoutError.code = 'TIMEOUT';
@@ -69,7 +69,7 @@ export class GoDocFetcher {
 
   async getPackageDoc(packagePath: string, version?: string): Promise<PackageDoc> {
     // If version is specified, append it to the URL
-    const url = version 
+    const url = version
       ? `${this.baseUrl}/${packagePath}@${version}`
       : `${this.baseUrl}/${packagePath}`;
     const html = await this.fetchHTML(url);
@@ -78,9 +78,10 @@ export class GoDocFetcher {
     try {
       // Extract package information
       const name = packagePath.split('/').pop() || packagePath;
-      const synopsis = $('meta[name="description"]').attr('content') || 
-                      $('.Documentation-overview p').first().text().trim() ||
-                      'No description available';
+      const synopsis =
+        $('meta[name="description"]').attr('content') ||
+        $('.Documentation-overview p').first().text().trim() ||
+        'No description available';
 
       // Get overview section
       const overview = $('.Documentation-overview').html() || undefined;
@@ -92,14 +93,18 @@ export class GoDocFetcher {
       const subdirectories: string[] = [];
       $('.Directories-list a').each((_, el) => {
         const dir = $(el).text().trim();
-        if (dir) subdirectories.push(dir);
+        if (dir) {
+          subdirectories.push(dir);
+        }
       });
 
       // Get imports
       const imports: string[] = [];
       $('.Documentation-imports a').each((_, el) => {
         const imp = $(el).text().trim();
-        if (imp) imports.push(imp);
+        if (imp) {
+          imports.push(imp);
+        }
       });
 
       // Extract version from the page if available
@@ -114,7 +119,7 @@ export class GoDocFetcher {
         overview,
         readme,
         subdirectories: subdirectories.length > 0 ? subdirectories : undefined,
-        imports: imports.length > 0 ? imports : undefined
+        imports: imports.length > 0 ? imports : undefined,
       };
     } catch (error) {
       logger.error(`Error parsing package doc for ${packagePath}:`, error);
@@ -125,8 +130,12 @@ export class GoDocFetcher {
     }
   }
 
-  async getFunctionDoc(packagePath: string, functionName: string, version?: string): Promise<FunctionDoc> {
-    const url = version 
+  async getFunctionDoc(
+    packagePath: string,
+    functionName: string,
+    version?: string
+  ): Promise<FunctionDoc> {
+    const url = version
       ? `${this.baseUrl}/${packagePath}@${version}`
       : `${this.baseUrl}/${packagePath}`;
     const html = await this.fetchHTML(url);
@@ -136,33 +145,33 @@ export class GoDocFetcher {
       // Find the function section
       let signature = '';
       let documentation = '';
-      let examples: CodeExample[] = [];
+      const examples: CodeExample[] = [];
 
       // Look for function in the documentation
       $('[data-kind="function"]').each((_, el) => {
         const $el = $(el);
         const $header = $el.find('.Documentation-functionHeader');
         const funcName = $header.find('h4').attr('id');
-        
+
         if (funcName === functionName) {
           // Get signature
           signature = $el.find('.Documentation-declaration pre').text().trim();
-          
+
           // Get documentation
           documentation = $el.find('.Documentation-content').first().text().trim();
-          
+
           // Get examples if any
           $el.find('.Documentation-exampleDetails').each((_, exEl) => {
             const $ex = $(exEl);
             const exampleName = $ex.find('.Documentation-exampleDetailsHeader').text().trim();
             const code = $ex.find('.Documentation-exampleCode pre').text().trim();
             const output = $ex.find('.Documentation-exampleOutput pre').text().trim();
-            
+
             if (code) {
               examples.push({
                 name: exampleName || 'Example',
                 code,
-                output: output || undefined
+                output: output || undefined,
               });
             }
           });
@@ -170,7 +179,9 @@ export class GoDocFetcher {
       });
 
       if (!signature) {
-        const error = new Error(`Function ${functionName} not found in ${packagePath}`) as GoDocError;
+        const error = new Error(
+          `Function ${functionName} not found in ${packagePath}`
+        ) as GoDocError;
         error.code = 'NOT_FOUND';
         throw error;
       }
@@ -180,7 +191,7 @@ export class GoDocFetcher {
         signature,
         documentation,
         examples: examples.length > 0 ? examples : undefined,
-        packagePath
+        packagePath,
       };
     } catch (error: any) {
       if (error.code === 'NOT_FOUND') {
@@ -195,7 +206,7 @@ export class GoDocFetcher {
   }
 
   async getTypeDoc(packagePath: string, typeName: string, version?: string): Promise<TypeDoc> {
-    const url = version 
+    const url = version
       ? `${this.baseUrl}/${packagePath}@${version}`
       : `${this.baseUrl}/${packagePath}`;
     const html = await this.fetchHTML(url);
@@ -204,18 +215,18 @@ export class GoDocFetcher {
     try {
       let definition = '';
       let documentation = '';
-      let methods: MethodDoc[] = [];
+      const methods: MethodDoc[] = [];
 
       // Look for type in the documentation
       $('[data-kind="type"]').each((_, el) => {
         const $el = $(el);
         const $header = $el.find('.Documentation-typeHeader');
         const typeId = $header.find('h4').attr('id');
-        
+
         if (typeId === typeName) {
           // Get definition
           definition = $el.find('.Documentation-declaration pre').text().trim();
-          
+
           // Get documentation
           documentation = $el.find('.Documentation-content').first().text().trim();
         }
@@ -226,19 +237,19 @@ export class GoDocFetcher {
         const $el = $(el);
         const $header = $el.find('.Documentation-functionHeader');
         const methodId = $header.find('h4').attr('id') || '';
-        
+
         // Check if this method belongs to our type
         if (methodId && methodId.startsWith(`${typeName}.`)) {
           const methodName = methodId.replace(`${typeName}.`, '');
           const methodSignature = $el.find('.Documentation-declaration pre').text().trim();
           const methodDoc = $el.find('.Documentation-content').first().text().trim();
-          
+
           if (methodSignature) {
             methods.push({
               name: methodName,
               signature: methodSignature,
               documentation: methodDoc,
-              receiver: typeName
+              receiver: typeName,
             });
           }
         }
@@ -255,7 +266,7 @@ export class GoDocFetcher {
         definition,
         documentation,
         methods: methods.length > 0 ? methods : undefined,
-        packagePath
+        packagePath,
       };
     } catch (error: any) {
       if (error.code === 'NOT_FOUND') {
@@ -282,42 +293,47 @@ export class GoDocFetcher {
         '.SearchSnippet',
         '[data-test-id="snippet-title"]',
         '.SearchResult',
-        'article'
+        'article',
       ];
 
       let found = false;
       for (const selector of searchSelectors) {
         $(selector).each((_, el) => {
           const $el = $(el);
-          
+
           // Try to find the package path
           const link = $el.find('a').first();
           const href = link.attr('href') || '';
           const path = href.replace(/^\//, '').split('@')[0]; // Remove leading slash and version
-          
-          // Try to find the name
-          const name = link.text().trim() || 
-                      $el.find('.SearchSnippet-header').text().trim() ||
-                      $el.find('h2').text().trim() ||
-                      path.split('/').pop() || '';
-          
-          // Try to find synopsis
-          const synopsis = $el.find('.SearchSnippet-synopsis').text().trim() ||
-                          $el.find('p').first().text().trim() ||
-                          $el.find('[data-test-id="snippet-synopsis"]').text().trim() ||
-                          'No description available';
 
-          if (path && name && !results.find(r => r.path === path)) {
+          // Try to find the name
+          const name =
+            link.text().trim() ||
+            $el.find('.SearchSnippet-header').text().trim() ||
+            $el.find('h2').text().trim() ||
+            path.split('/').pop() ||
+            '';
+
+          // Try to find synopsis
+          const synopsis =
+            $el.find('.SearchSnippet-synopsis').text().trim() ||
+            $el.find('p').first().text().trim() ||
+            $el.find('[data-test-id="snippet-synopsis"]').text().trim() ||
+            'No description available';
+
+          if (path && name && !results.find((r) => r.path === path)) {
             results.push({
               path,
               name,
-              synopsis
+              synopsis,
             });
             found = true;
           }
         });
-        
-        if (found) break;
+
+        if (found) {
+          break;
+        }
       }
 
       return results;
@@ -331,7 +347,7 @@ export class GoDocFetcher {
   }
 
   async getPackageExamples(packagePath: string, version?: string): Promise<CodeExample[]> {
-    const url = version 
+    const url = version
       ? `${this.baseUrl}/${packagePath}@${version}`
       : `${this.baseUrl}/${packagePath}`;
     const html = await this.fetchHTML(url);
@@ -350,7 +366,7 @@ export class GoDocFetcher {
           examples.push({
             name: name || 'Example',
             code,
-            output: output || undefined
+            output: output || undefined,
           });
         }
       });

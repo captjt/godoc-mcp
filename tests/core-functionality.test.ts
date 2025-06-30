@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { DocumentationCache } from '../src/cache/index.js';
 import { GoDocFetcher } from '../src/fetcher/index.js';
 import { ModuleIndexFetcher } from '../src/fetcher/module-index.js';
@@ -9,7 +9,7 @@ describe('Core Functionality (No Network)', () => {
       const cache = new DocumentationCache();
       const key = 'test';
       const value = { data: 'test' };
-      
+
       expect(cache.set(key, value)).toBe(true);
       expect(cache.get(key)).toEqual(value);
     });
@@ -17,10 +17,10 @@ describe('Core Functionality (No Network)', () => {
     it('should handle TTL', async () => {
       const cache = new DocumentationCache({ stdTTL: 1 });
       cache.set('key', 'value');
-      
+
       expect(cache.get('key')).toBe('value');
-      
-      await new Promise(resolve => setTimeout(resolve, 1100));
+
+      await new Promise((resolve) => setTimeout(resolve, 1100));
       expect(cache.get('key')).toBeUndefined();
     });
 
@@ -29,7 +29,7 @@ describe('Core Functionality (No Network)', () => {
       cache.set('key1', 'value1');
       cache.get('key1'); // hit
       cache.get('key2'); // miss
-      
+
       const stats = cache.getStats();
       expect(stats.keys).toBe(1);
       expect(stats.hits).toBe(1);
@@ -54,12 +54,12 @@ describe('Core Functionality (No Network)', () => {
 
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        text: async () => mockHTML
+        text: async () => mockHTML,
       });
 
       const fetcher = new GoDocFetcher();
       const doc = await fetcher.getPackageDoc('test');
-      
+
       expect(doc.name).toBe('test');
       expect(doc.importPath).toBe('test');
       expect(doc.synopsis).toContain('testing utilities');
@@ -69,13 +69,12 @@ describe('Core Functionality (No Network)', () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 404,
-        statusText: 'Not Found'
+        statusText: 'Not Found',
       });
 
       const fetcher = new GoDocFetcher();
-      
-      await expect(fetcher.getPackageDoc('not-found'))
-        .rejects.toThrow('Package not found');
+
+      await expect(fetcher.getPackageDoc('not-found')).rejects.toThrow('Package not found');
     });
   });
 
@@ -86,12 +85,12 @@ describe('Core Functionality (No Network)', () => {
 
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        text: async () => mockIndex
+        text: async () => mockIndex,
       });
 
       const indexFetcher = new ModuleIndexFetcher();
       const index = await indexFetcher.getIndex();
-      
+
       expect(index).toHaveLength(2);
       expect(index[0].path).toBe('fmt');
       expect(index[1].path).toBe('errors');
@@ -104,12 +103,12 @@ describe('Core Functionality (No Network)', () => {
 
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        text: async () => mockIndex
+        text: async () => mockIndex,
       });
 
       const indexFetcher = new ModuleIndexFetcher();
       const versions = await indexFetcher.getPackageVersions('test/pkg');
-      
+
       expect(versions).toBeDefined();
       expect(versions?.versions).toHaveLength(3);
       expect(versions?.latest).toBe('v2.0.0');
@@ -122,16 +121,16 @@ describe('Core Functionality (No Network)', () => {
       const mockDoc = {
         name: 'fmt',
         importPath: 'fmt',
-        synopsis: 'Package fmt implements formatted I/O'
+        synopsis: 'Package fmt implements formatted I/O',
       };
 
       // Simulate fetching and caching
       cache.set('package:fmt', mockDoc);
-      
+
       // Retrieve from cache
       const cached = cache.get('package:fmt');
       expect(cached).toEqual(mockDoc);
-      
+
       // Cache hit should be recorded
       const stats = cache.getStats();
       expect(stats.hits).toBe(1);

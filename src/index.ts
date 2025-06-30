@@ -15,11 +15,11 @@ import { logger } from './utils/logger.js';
 // Initialize components
 const cache = new DocumentationCache({
   stdTTL: parseInt(process.env.GODOC_MCP_CACHE_TTL || '3600'),
-  maxKeys: parseInt(process.env.GODOC_MCP_CACHE_SIZE || '1000')
+  maxKeys: parseInt(process.env.GODOC_MCP_CACHE_SIZE || '1000'),
 });
 
 const fetcher = new GoDocFetcher({
-  timeout: parseInt(process.env.GODOC_MCP_REQUEST_TIMEOUT || '30') * 1000
+  timeout: parseInt(process.env.GODOC_MCP_REQUEST_TIMEOUT || '30') * 1000,
 });
 
 const moduleIndex = new ModuleIndexFetcher(
@@ -42,15 +42,15 @@ const server = new Server(
 // Error handler helper
 function handleError(error: any): McpError {
   logger.error('Tool error:', error);
-  
+
   if (error.code === 'NOT_FOUND') {
     return new McpError(ErrorCode.InvalidRequest, error.message);
   }
-  
+
   if (error.code === 'TIMEOUT') {
     return new McpError(ErrorCode.InternalError, 'Request timeout');
   }
-  
+
   return new McpError(ErrorCode.InternalError, 'An error occurred while fetching documentation');
 }
 
@@ -65,15 +65,15 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         properties: {
           package: {
             type: 'string',
-            description: 'Package path'
+            description: 'Package path',
           },
           version: {
             type: 'string',
-            description: 'Optional version'
-          }
+            description: 'Optional version',
+          },
         },
-        required: ['package']
-      }
+        required: ['package'],
+      },
     },
     {
       name: 'get_function_doc',
@@ -83,19 +83,19 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         properties: {
           package: {
             type: 'string',
-            description: 'Package path'
+            description: 'Package path',
           },
           function: {
             type: 'string',
-            description: 'Function name'
+            description: 'Function name',
           },
           version: {
             type: 'string',
-            description: 'Optional version'
-          }
+            description: 'Optional version',
+          },
         },
-        required: ['package', 'function']
-      }
+        required: ['package', 'function'],
+      },
     },
     {
       name: 'get_type_doc',
@@ -105,19 +105,19 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         properties: {
           package: {
             type: 'string',
-            description: 'Package path'
+            description: 'Package path',
           },
           type: {
             type: 'string',
-            description: 'Type name'
+            description: 'Type name',
           },
           version: {
             type: 'string',
-            description: 'Optional version'
-          }
+            description: 'Optional version',
+          },
         },
-        required: ['package', 'type']
-      }
+        required: ['package', 'type'],
+      },
     },
     {
       name: 'search_packages',
@@ -127,17 +127,17 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         properties: {
           query: {
             type: 'string',
-            description: 'Search query'
+            description: 'Search query',
           },
           limit: {
             type: 'number',
             description: 'Maximum number of results (default: 10)',
             minimum: 1,
-            maximum: 50
-          }
+            maximum: 50,
+          },
         },
-        required: ['query']
-      }
+        required: ['query'],
+      },
     },
     {
       name: 'get_package_examples',
@@ -147,11 +147,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         properties: {
           package: {
             type: 'string',
-            description: 'Package path'
-          }
+            description: 'Package path',
+          },
         },
-        required: ['package']
-      }
+        required: ['package'],
+      },
     },
     {
       name: 'get_package_versions',
@@ -161,17 +161,18 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         properties: {
           package: {
             type: 'string',
-            description: 'Package path'
-          }
+            description: 'Package path',
+          },
         },
-        required: ['package']
-      }
-    }  ]
+        required: ['package'],
+      },
+    },
+  ],
 }));
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
-  
+
   if (!args) {
     throw new McpError(ErrorCode.InvalidParams, 'Missing arguments');
   }
@@ -181,30 +182,28 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case 'get_package_doc': {
         const packagePath = args.package as string;
         let version = args.version as string | undefined;
-        
+
         // Handle "latest" version
         if (version === 'latest') {
-          version = await moduleIndex.getLatestVersion(packagePath) || undefined;
+          version = (await moduleIndex.getLatestVersion(packagePath)) || undefined;
         }
-        
-        const cacheKey = version 
-          ? `package:${packagePath}@${version}`
-          : `package:${packagePath}`;
-        
+
+        const cacheKey = version ? `package:${packagePath}@${version}` : `package:${packagePath}`;
+
         // Check cache first
         let doc = cache.get(cacheKey);
         if (!doc) {
           doc = await fetcher.getPackageDoc(packagePath, version);
           cache.set(cacheKey, doc);
         }
-        
+
         return {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(doc, null, 2)
-            }
-          ]
+              text: JSON.stringify(doc, null, 2),
+            },
+          ],
         };
       }
 
@@ -212,28 +211,28 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const packagePath = args.package as string;
         const functionName = args.function as string;
         let version = args.version as string | undefined;
-        
+
         if (version === 'latest') {
-          version = await moduleIndex.getLatestVersion(packagePath) || undefined;
+          version = (await moduleIndex.getLatestVersion(packagePath)) || undefined;
         }
-        
+
         const cacheKey = version
           ? `function:${packagePath}@${version}:${functionName}`
           : `function:${packagePath}:${functionName}`;
-        
+
         let doc = cache.get(cacheKey);
         if (!doc) {
           doc = await fetcher.getFunctionDoc(packagePath, functionName, version);
           cache.set(cacheKey, doc);
         }
-        
+
         return {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(doc, null, 2)
-            }
-          ]
+              text: JSON.stringify(doc, null, 2),
+            },
+          ],
         };
       }
 
@@ -241,28 +240,28 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const packagePath = args.package as string;
         const typeName = args.type as string;
         let version = args.version as string | undefined;
-        
+
         if (version === 'latest') {
-          version = await moduleIndex.getLatestVersion(packagePath) || undefined;
+          version = (await moduleIndex.getLatestVersion(packagePath)) || undefined;
         }
-        
+
         const cacheKey = version
           ? `type:${packagePath}@${version}:${typeName}`
           : `type:${packagePath}:${typeName}`;
-        
+
         let doc = cache.get(cacheKey);
         if (!doc) {
           doc = await fetcher.getTypeDoc(packagePath, typeName, version);
           cache.set(cacheKey, doc);
         }
-        
+
         return {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(doc, null, 2)
-            }
-          ]
+              text: JSON.stringify(doc, null, 2),
+            },
+          ],
         };
       }
 
@@ -270,72 +269,73 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const query = args.query as string;
         const limit = (args.limit as number) || 10;
         const cacheKey = `search:${query}:${limit}`;
-        
+
         let results = cache.get(cacheKey);
         if (!results) {
           results = await fetcher.searchPackages(query, limit);
           cache.set(cacheKey, results, 300); // Cache search results for 5 minutes
         }
-        
+
         return {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(results, null, 2)
-            }
-          ]
+              text: JSON.stringify(results, null, 2),
+            },
+          ],
         };
       }
 
       case 'get_package_examples': {
         const packagePath = args.package as string;
         let version = args.version as string | undefined;
-        
+
         if (version === 'latest') {
-          version = await moduleIndex.getLatestVersion(packagePath) || undefined;
+          version = (await moduleIndex.getLatestVersion(packagePath)) || undefined;
         }
-        
-        const cacheKey = version
-          ? `examples:${packagePath}@${version}`
-          : `examples:${packagePath}`;
-        
+
+        const cacheKey = version ? `examples:${packagePath}@${version}` : `examples:${packagePath}`;
+
         let examples = cache.get(cacheKey);
         if (!examples) {
           examples = await fetcher.getPackageExamples(packagePath, version);
           cache.set(cacheKey, examples);
         }
-        
+
         return {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(examples, null, 2)
-            }
-          ]
+              text: JSON.stringify(examples, null, 2),
+            },
+          ],
         };
       }
 
       case 'get_package_versions': {
         const packagePath = args.package as string;
         const cacheKey = `versions:${packagePath}`;
-        
+
         let versions = cache.get(cacheKey);
         if (!versions) {
           versions = await moduleIndex.getPackageVersions(packagePath);
           cache.set(cacheKey, versions, 300); // Cache for 5 minutes
         }
-        
+
         if (!versions) {
-          throw new McpError(ErrorCode.InvalidRequest, `No versions found for package: ${packagePath}`);
+          throw new McpError(
+            ErrorCode.InvalidRequest,
+            `No versions found for package: ${packagePath}`
+          );
         }
-        
+
         return {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(versions, null, 2)
-            }
-          ]
+              text: JSON.stringify(versions, null, 2),
+            },
+          ],
         };
       }
 
@@ -351,9 +351,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  
+
   logger.info('godoc-mcp server started');
-  
+
   // Log cache stats periodically in debug mode
   if (process.env.LOG_LEVEL === 'debug') {
     setInterval(() => {

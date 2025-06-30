@@ -1,24 +1,32 @@
 import { DocumentationCache } from '../../src/cache/index.js';
 
-export function createTestCache(options?: { stdTTL?: number; checkperiod?: number; maxKeys?: number }) {
+export function createTestCache(options?: {
+  stdTTL?: number;
+  checkperiod?: number;
+  maxKeys?: number;
+}) {
   return new DocumentationCache({
     stdTTL: options?.stdTTL || 60, // 1 minute for tests
     checkperiod: options?.checkperiod || 10,
-    maxKeys: options?.maxKeys || 100
+    maxKeys: options?.maxKeys || 100,
   });
 }
 
 export function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export function mockFetchResponse(body: string, status = 200, headers: Record<string, string> = {}) {
+export function mockFetchResponse(
+  body: string,
+  status = 200,
+  headers: Record<string, string> = {}
+) {
   return new Response(body, {
     status,
     headers: {
       'Content-Type': 'text/html',
-      ...headers
-    }
+      ...headers,
+    },
   });
 }
 
