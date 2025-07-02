@@ -1,5 +1,8 @@
 # godoc-mcp
 
+> [!IMPORTANT]  
+> This is still in development. There are still some outstanding features/issues that need to be completed, use at your own risk. 
+
 A Model Context Protocol (MCP) server that provides real-time access to Go package documentation from pkg.go.dev, ensuring LLMs always have the latest and most accurate Go ecosystem information.
 
 ## Features
